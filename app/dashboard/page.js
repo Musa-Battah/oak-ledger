@@ -10,7 +10,6 @@ export default function DashboardPage() {
     totalCredits: 0,
     isBalanced: true
   });
-  const [recentEntries, setRecentEntries] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,16 +18,9 @@ export default function DashboardPage() {
 
   const fetchDashboard = async () => {
     try {
-      const [statsRes, entriesRes] = await Promise.all([
-        fetch('/api/reports/dashboard'),
-        fetch('/api/journal/entries?limit=5')
-      ]);
-      
+      const statsRes = await fetch('/api/reports/dashboard');
       const statsData = await statsRes.json();
-      const entriesData = await entriesRes.json();
-      
       setStats(statsData);
-      setRecentEntries(entriesData);
     } catch (err) {
       console.error('Error:', err);
     } finally {
@@ -72,56 +64,19 @@ export default function DashboardPage() {
       </div>
       
       <div className="dashboard-actions">
-        <Link href="/journal/new" className="action-card">
-          <h3>📝 New Entry</h3>
-          <p>Record transaction</p>
+        <Link href="/sales/invoices/new" className="action-card">
+          <h3>📝 New Invoice</h3>
+          <p>Create sales invoice</p>
+        </Link>
+        <Link href="/purchases/bills/new" className="action-card">
+          <h3>📄 New Bill</h3>
+          <p>Record purchase</p>
         </Link>
         <Link href="/reports/trial-balance" className="action-card">
           <h3>📊 Trial Balance</h3>
           <p>Verify ledger</p>
         </Link>
-        <Link href="/ledger" className="action-card">
-          <h3>📒 General Ledger</h3>
-          <p>View accounts</p>
-        </Link>
-        <Link href="/accounts" className="action-card">
-          <h3>🏷️ Chart of Accounts</h3>
-          <p>Manage accounts</p>
-        </Link>
       </div>
-      
-      {recentEntries.length > 0 && (
-        <div className="card">
-          <div className="card-header">
-            <span className="card-title">Recent Journal Entries</span>
-            <Link href="/journal" className="btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }}>
-              View All
-            </Link>
-          </div>
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Entry #</th>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentEntries.map(entry => (
-                  <tr key={entry.id}>
-                    <td style={{ fontFamily: 'monospace' }}>{entry.entry_number}</td>
-                    <td>{new Date(entry.entry_date).toLocaleDateString()}</td>
-                    <td>{entry.description}</td>
-                    <td>{formatNaira(entry.total_debit)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
