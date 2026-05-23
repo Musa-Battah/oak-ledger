@@ -6,11 +6,13 @@ export async function GET() {
     const result = await query(`
       SELECT si.*, c.name as customer_name 
       FROM sales_invoices si
-      JOIN customers c ON si.customer_id = c.id
+      LEFT JOIN customers c ON si.customer_id = c.id
       ORDER BY si.date DESC
+      LIMIT 50
     `);
-    return NextResponse.json(result.rows);
+    return NextResponse.json(result.rows || []);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Error fetching invoices:', error);
+    return NextResponse.json([]);
   }
 }

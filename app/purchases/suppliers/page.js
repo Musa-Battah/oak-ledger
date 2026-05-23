@@ -17,14 +17,16 @@ export default function SuppliersPage() {
       const data = await res.json();
       setSuppliers(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching suppliers:', err);
       setSuppliers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div className="loading">Loading suppliers...</div>;
+  if (loading) {
+    return <div className="loading">Loading suppliers...</div>;
+  }
 
   return (
     <div>

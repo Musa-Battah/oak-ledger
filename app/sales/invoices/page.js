@@ -17,7 +17,7 @@ export default function SalesInvoicesPage() {
       const data = await res.json();
       setInvoices(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching invoices:', err);
       setInvoices([]);
     } finally {
       setLoading(false);

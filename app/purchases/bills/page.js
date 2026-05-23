@@ -17,7 +17,7 @@ export default function PurchaseBillsPage() {
       const data = await res.json();
       setBills(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching bills:', err);
       setBills([]);
     } finally {
       setLoading(false);

@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Typeahead from '@/components/Typeahead';
 
-export default function NewBillPage() {
+export default function NewInvoicePage() {
   const router = useRouter();
-  const [suppliers, setSuppliers] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -25,13 +25,13 @@ export default function NewBillPage() {
 
   const fetchData = async () => {
     try {
-      const [suppliersRes, productsRes] = await Promise.all([
-        fetch('/api/purchases/suppliers'),
+      const [customersRes, productsRes] = await Promise.all([
+        fetch('/api/sales/customers'),
         fetch('/api/sales/products')
       ]);
-      const suppliersData = await suppliersRes.json();
+      const customersData = await customersRes.json();
       const productsData = await productsRes.json();
-      setSuppliers(Array.isArray(suppliersData) ? suppliersData : []);
+      setCustomers(Array.isArray(customersData) ? customersData : []);
       setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -40,16 +40,16 @@ export default function NewBillPage() {
     }
   };
 
-  const handleAddSupplier = async (name) => {
-    const res = await fetch('/api/purchases/suppliers', {
+  const handleAddCustomer = async (name) => {
+    const res = await fetch('/api/sales/customers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email: '', phone: '', address: '' })
     });
     if (res.ok) {
-      const newSupplier = await res.json();
-      setSuppliers([...suppliers, newSupplier]);
-      return newSupplier;
+      const newCustomer = await res.json();
+      setCustomers([...customers, newCustomer]);
+      return newCustomer;
     }
     return null;
   };
@@ -116,8 +116,8 @@ export default function NewBillPage() {
     e.preventDefault();
     setSubmitting(true);
     
-    if (!selectedSupplier) {
-      alert('Please select a supplier');
+    if (!selectedCustomer) {
+      alert('Please select a customer');
       setSubmitting(false);
       return;
     }
@@ -131,11 +131,11 @@ export default function NewBillPage() {
     }
     
     try {
-      const res = await fetch('/api/purchases/bill', {
+      const res = await fetch('/api/sales/invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          supplier_id: selectedSupplier.id,
+          customer_id: selectedCustomer.id,
           date: formData.date,
           due_date: formData.due_date,
           tax_rate: formData.tax_rate,
@@ -152,10 +152,10 @@ export default function NewBillPage() {
       const data = await res.json();
       
       if (res.ok) {
-        alert(`Bill ${data.bill.bill_number} created successfully!`);
-        router.push('/purchases/bills');
+        alert(`Invoice ${data.invoice.invoice_number} created successfully!`);
+        router.push('/sales/invoices');
       } else {
-        alert(data.error || 'Failed to create bill');
+        alert(data.error || 'Failed to create invoice');
       }
     } catch (err) {
       console.error('Error:', err);
@@ -179,34 +179,34 @@ export default function NewBillPage() {
 
   return (
     <div>
-      <h1>Create New Purchase Bill</h1>
+      <h1>Create New Invoice</h1>
       
       <form onSubmit={handleSubmit} className="card">
-        {/* Supplier Section */}
+        {/* Customer Section */}
         <div className="form-section">
-          <h2 className="form-section-title">Supplier Information</h2>
+          <h2 className="form-section-title">Customer Information</h2>
           <Typeahead
-            items={suppliers}
-            onSelect={setSelectedSupplier}
-            onAddNew={handleAddSupplier}
-            placeholder="Search or add new supplier..."
+            items={customers}
+            onSelect={setSelectedCustomer}
+            onAddNew={handleAddCustomer}
+            placeholder="Search or add new customer..."
             displayKey="name"
             valueKey="id"
           />
-          {selectedSupplier && (
+          {selectedCustomer && (
             <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--success)' }}>
-              ✓ Selected: {selectedSupplier.name}
+              ✓ Selected: {selectedCustomer.name}
             </div>
           )}
         </div>
         
-        {/* Bill Details */}
+        {/* Invoice Details */}
         <div className="form-section">
-          <h2 className="form-section-title">Bill Details</h2>
+          <h2 className="form-section-title">Invoice Details</h2>
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
             <div className="form-group">
-              <label>Bill Date</label>
+              <label>Invoice Date</label>
               <input
                 type="date"
                 value={formData.date}
@@ -228,7 +228,7 @@ export default function NewBillPage() {
         
         {/* Items Section */}
         <div className="form-section">
-          <h2 className="form-section-title">Bill Items</h2>
+          <h2 className="form-section-title">Invoice Items</h2>
           
           <div className="table-container">
             <table className="items-table">
@@ -280,7 +280,7 @@ export default function NewBillPage() {
                         step="0.01"
                       />
                     </td>
-                    <td className="amount-negative">
+                    <td className="amount-positive">
                       {formatNaira(item.quantity * item.unit_price)}
                     </td>
                     <td style={{ textAlign: 'center' }}>
@@ -342,7 +342,7 @@ export default function NewBillPage() {
               value={formData.notes}
               onChange={(e) => setFormData({...formData, notes: e.target.value})}
               rows="3"
-              placeholder="Payment terms, delivery instructions, etc."
+              placeholder="Thank you for your business! Payment is due within 30 days."
               style={{ width: '100%' }}
             />
           </div>
@@ -353,7 +353,7 @@ export default function NewBillPage() {
             Cancel
           </button>
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? 'Creating Bill...' : 'Create Bill'}
+            {submitting ? 'Creating Invoice...' : 'Create Invoice'}
           </button>
         </div>
       </form>

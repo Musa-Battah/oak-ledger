@@ -15,9 +15,10 @@ export default function CustomersPage() {
     try {
       const res = await fetch('/api/sales/customers');
       const data = await res.json();
-      setCustomers(data);
+      setCustomers(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching customers:', err);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -31,7 +32,9 @@ export default function CustomersPage() {
     }).format(amount);
   };
 
-  if (loading) return <div className="loading">Loading customers...</div>;
+  if (loading) {
+    return <div className="loading">Loading customers...</div>;
+  }
 
   return (
     <div>
@@ -67,7 +70,7 @@ export default function CustomersPage() {
                     <td>{customer.name}</td>
                     <td>{customer.email || '-'}</td>
                     <td>{customer.phone || '-'}</td>
-                    <td>{customer.invoice_count}</td>
+                    <td>{customer.invoice_count || 0}</td>
                     <td>{formatNaira(customer.total_spent || 0)}</td>
                   </tr>
                 ))}

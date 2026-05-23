@@ -15,9 +15,10 @@ export default function ProductsPage() {
     try {
       const res = await fetch('/api/sales/products');
       const data = await res.json();
-      setProducts(data);
+      setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching products:', err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -31,7 +32,9 @@ export default function ProductsPage() {
     }).format(amount);
   };
 
-  if (loading) return <div className="loading">Loading products...</div>;
+  if (loading) {
+    return <div className="loading">Loading products...</div>;
+  }
 
   return (
     <div>
