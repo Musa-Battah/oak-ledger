@@ -38,16 +38,30 @@ export async function POST(request) {
       
       const bill = billResult.rows[0];
       
-      for (const item of items) {
-        await client.query(`
-          INSERT INTO bill_items (bill_id, product_name, description, quantity, unit_price, total)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `, [bill.id, item.product_name, item.description || null, item.quantity, item.unit_price, item.quantity * item.unit_price]);
-      }
-      
+// In the POST function, update the bill items insert to remove description
+for (const item of items) {
+  await client.query(`
+    INSERT INTO bill_items (bill_id, product_name, quantity, unit_price, total)
+    VALUES ($1, $2, $3, $4, $5)
+  `, [bill.id, item.product_name, item.quantity, item.unit_price, item.quantity * item.unit_price]);
+}
+
+
       await client.query('COMMIT');
       
-      return NextResponse.json({ success: true, bill });
+      // Get supplier name for response
+      const supplierResult = await client.query(
+        'SELECT name FROM suppliers WHERE id = $1',
+        [supplier_id]
+      );
+      
+      return NextResponse.json({ 
+        success: true, 
+        bill: {
+          ...bill,
+          supplier_name: supplierResult.rows[0]?.name
+        }
+      });
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;

@@ -16,7 +16,7 @@ export default function NewBillPage() {
     due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     tax_rate: 7.5,
     notes: '',
-    items: [{ product_id: '', product_name: '', description: '', quantity: 1, unit_price: 0 }]
+    items: [{ product_id: '', product_name: '', quantity: 1, unit_price: 0 }]
   });
 
   useEffect(() => {
@@ -41,37 +41,47 @@ export default function NewBillPage() {
   };
 
   const handleAddSupplier = async (name) => {
-    const res = await fetch('/api/purchases/suppliers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email: '', phone: '', address: '' })
-    });
-    if (res.ok) {
-      const newSupplier = await res.json();
-      setSuppliers([...suppliers, newSupplier]);
-      return newSupplier;
+    try {
+      const res = await fetch('/api/purchases/suppliers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email: '', phone: '', address: '' })
+      });
+      if (res.ok) {
+        const newSupplier = await res.json();
+        setSuppliers(prev => [...prev, newSupplier]);
+        return newSupplier;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error adding supplier:', err);
+      return null;
     }
-    return null;
   };
 
   const handleAddProduct = async (name) => {
-    const res = await fetch('/api/sales/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description: '', price: 0, sku: '' })
-    });
-    if (res.ok) {
-      const newProduct = await res.json();
-      setProducts([...products, newProduct]);
-      return newProduct;
+    try {
+      const res = await fetch('/api/sales/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description: '', price: 0 })
+      });
+      if (res.ok) {
+        const newProduct = await res.json();
+        setProducts(prev => [...prev, newProduct]);
+        return newProduct;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error adding product:', err);
+      return null;
     }
-    return null;
   };
 
   const addItem = () => {
     setFormData({
       ...formData,
-      items: [...formData.items, { product_id: '', product_name: '', description: '', quantity: 1, unit_price: 0 }]
+      items: [...formData.items, { product_id: '', product_name: '', quantity: 1, unit_price: 0 }]
     });
   };
 
@@ -93,8 +103,6 @@ export default function NewBillPage() {
       updatedItems[index].quantity = parseInt(value) || 0;
     } else if (field === 'unit_price') {
       updatedItems[index].unit_price = parseFloat(value) || 0;
-    } else if (field === 'description') {
-      updatedItems[index].description = value;
     }
     
     setFormData({ ...formData, items: updatedItems });
@@ -142,7 +150,6 @@ export default function NewBillPage() {
           notes: formData.notes,
           items: validItems.map(item => ({
             product_name: item.product_name,
-            description: item.description,
             quantity: item.quantity,
             unit_price: item.unit_price
           }))
@@ -178,13 +185,13 @@ export default function NewBillPage() {
   }
 
   return (
-    <div>
+    <div className="invoice-form-page">
       <h1>Create New Purchase Bill</h1>
       
-      <form onSubmit={handleSubmit} className="card">
+      <form onSubmit={handleSubmit} className="card invoice-card">
         {/* Supplier Section */}
         <div className="form-section">
-          <h2 className="form-section-title">Supplier Information</h2>
+          <h2 className="form-section-title">Supplier</h2>
           <Typeahead
             items={suppliers}
             onSelect={setSelectedSupplier}
@@ -194,7 +201,7 @@ export default function NewBillPage() {
             valueKey="id"
           />
           {selectedSupplier && (
-            <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--success)' }}>
+            <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--success)' }}>
               ✓ Selected: {selectedSupplier.name}
             </div>
           )}
@@ -202,10 +209,9 @@ export default function NewBillPage() {
         
         {/* Bill Details */}
         <div className="form-section">
-          <h2 className="form-section-title">Bill Details</h2>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div className="form-group">
+          <h2 className="form-section-title">Details</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Bill Date</label>
               <input
                 type="date"
@@ -214,7 +220,7 @@ export default function NewBillPage() {
                 required
               />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Due Date</label>
               <input
                 type="date"
@@ -226,19 +232,19 @@ export default function NewBillPage() {
           </div>
         </div>
         
-        {/* Items Section */}
+        {/* Items Section - No internal scrolling */}
         <div className="form-section">
-          <h2 className="form-section-title">Bill Items</h2>
+          <h2 className="form-section-title">Items</h2>
           
-          <div className="table-container">
+          <div className="items-table-container">
             <table className="items-table">
               <thead>
                 <tr>
-                  <th style={{ width: '35%' }}>Product/Service</th>
-                  <th style={{ width: '10%' }}>Qty</th>
-                  <th style={{ width: '20%' }}>Unit Price (₦)</th>
-                  <th style={{ width: '20%' }}>Total (₦)</th>
-                  <th style={{ width: '5%' }}></th>
+                  <th style={{ width: '45%' }}>Product / Service</th>
+                  <th style={{ width: '12%' }}>Qty</th>
+                  <th style={{ width: '18%' }}>Unit Price (₦)</th>
+                  <th style={{ width: '18%' }}>Total (₦)</th>
+                  <th style={{ width: '7%' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -249,17 +255,10 @@ export default function NewBillPage() {
                         items={products}
                         onSelect={(product) => updateItem(idx, 'product', product)}
                         onAddNew={handleAddProduct}
-                        placeholder="Search or add new product..."
+                        placeholder="Search or add product..."
                         displayKey="name"
                         valueKey="id"
                         value={item.product_name}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Description (optional)"
-                        value={item.description}
-                        onChange={(e) => updateItem(idx, 'description', e.target.value)}
-                        style={{ width: '100%', marginTop: '8px', fontSize: '12px' }}
                       />
                     </td>
                     <td>
@@ -288,7 +287,7 @@ export default function NewBillPage() {
                         type="button"
                         onClick={() => removeItem(idx)}
                         className="btn-danger"
-                        style={{ padding: '4px 8px', fontSize: '12px' }}
+                        style={{ padding: '4px 8px', fontSize: '11px' }}
                         disabled={formData.items.length === 1}
                       >
                         ✖
@@ -300,14 +299,14 @@ export default function NewBillPage() {
             </table>
           </div>
           
-          <button type="button" onClick={addItem} className="btn-secondary" style={{ marginTop: '12px' }}>
+          <button type="button" onClick={addItem} className="btn-secondary" style={{ marginTop: '10px', padding: '6px 12px', fontSize: '12px' }}>
             + Add Item
           </button>
         </div>
         
         {/* Tax and Totals */}
         <div className="form-section">
-          <div className="form-group" style={{ maxWidth: '300px', marginLeft: 'auto' }}>
+          <div className="form-group" style={{ maxWidth: '200px', marginLeft: 'auto', marginBottom: 0 }}>
             <label>Tax Rate (%)</label>
             <input
               type="number"
@@ -315,10 +314,11 @@ export default function NewBillPage() {
               onChange={(e) => setFormData({...formData, tax_rate: parseFloat(e.target.value) || 0})}
               step="0.1"
               min="0"
+              style={{ textAlign: 'right' }}
             />
           </div>
           
-          <div style={{ textAlign: 'right', marginTop: '20px' }}>
+          <div className="totals-section">
             <div className="totals-line">
               <span>Subtotal:</span>
               <span>{formatNaira(calculateSubtotal())}</span>
@@ -334,21 +334,22 @@ export default function NewBillPage() {
           </div>
         </div>
         
-        {/* Notes Section */}
-        <div className="form-section">
-          <div className="form-group">
+        {/* Notes */}
+        <div className="form-section" style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }}>
+          <div className="form-group" style={{ marginBottom: 0 }}>
             <label>Notes (Optional)</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({...formData, notes: e.target.value})}
-              rows="3"
-              placeholder="Payment terms, delivery instructions, etc."
-              style={{ width: '100%' }}
+              rows="2"
+              placeholder="Payment terms, delivery instructions..."
+              style={{ width: '100%', fontSize: '12px' }}
             />
           </div>
         </div>
         
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', marginTop: '24px' }}>
+        {/* Sticky Action Buttons */}
+        <div className="form-actions-sticky">
           <button type="button" onClick={() => router.back()} className="btn-secondary">
             Cancel
           </button>

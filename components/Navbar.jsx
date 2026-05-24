@@ -55,7 +55,6 @@ export default function Navbar() {
         </button>
         
         <div className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-          {/* Home */}
           <Link href="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`} onClick={closeDropdown}>
             Home
           </Link>
@@ -75,6 +74,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/sales/invoices" className="dropdown-item" onClick={closeDropdown}>
                   Invoices
+                </Link>
+                <Link href="/sales/invoices/new" className="dropdown-item" onClick={closeDropdown}>
+                  New Invoice
                 </Link>
                 <Link href="/sales/products" className="dropdown-item" onClick={closeDropdown}>
                   Products & Services
@@ -104,6 +106,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/purchases/bills" className="dropdown-item" onClick={closeDropdown}>
                   Bills
+                </Link>
+                <Link href="/purchases/bills/new" className="dropdown-item" onClick={closeDropdown}>
+                  New Bill
                 </Link>
                 <Link href="/purchases/orders" className="dropdown-item" onClick={closeDropdown}>
                   Purchase Orders

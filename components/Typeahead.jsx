@@ -11,7 +11,7 @@ export default function Typeahead({
   displayKey = "name",
   valueKey = "id"
 }) {
-  const [searchTerm, setSearchTerm] = useState(value);
+  const [searchTerm, setSearchTerm] = useState(value || '');
   const [isOpen, setIsOpen] = useState(false);
   const [filteredItems, setFilteredItems] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -19,10 +19,17 @@ export default function Typeahead({
   const containerRef = useRef(null);
 
   useEffect(() => {
+    if (value && value !== searchTerm) {
+      setSearchTerm(value);
+    }
+  }, [value]);
+
+  useEffect(() => {
     const filtered = items.filter(item =>
-      item[displayKey].toLowerCase().includes(searchTerm.toLowerCase())
+      item[displayKey]?.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredItems(filtered);
+    setSelectedIndex(-1);
   }, [searchTerm, items, displayKey]);
 
   useEffect(() => {
@@ -45,36 +52,46 @@ export default function Typeahead({
   const handleAddNew = async () => {
     if (!searchTerm.trim()) return;
     setLoading(true);
-    const newItem = await onAddNew(searchTerm);
-    setLoading(false);
-    if (newItem) {
-      onSelect(newItem);
-      setSearchTerm(newItem[displayKey]);
-      setIsOpen(false);
+    try {
+      const newItem = await onAddNew(searchTerm.trim());
+      if (newItem) {
+        onSelect(newItem);
+        setSearchTerm(newItem[displayKey]);
+        setIsOpen(false);
+        setSelectedIndex(-1);
+      }
+    } catch (err) {
+      console.error('Error adding new item:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleKeyDown = (e) => {
+    const totalItems = filteredItems.length;
+    const hasAddNew = searchTerm.trim() && !filteredItems.some(i => i[displayKey]?.toLowerCase() === searchTerm.toLowerCase());
+    const totalSelectable = totalItems + (hasAddNew ? 1 : 0);
+
     if (!isOpen) {
       if (e.key === 'ArrowDown' || e.key === 'Enter') {
+        e.preventDefault();
         setIsOpen(true);
+        setSelectedIndex(0);
       }
       return;
     }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex(prev => 
-        prev < filteredItems.length - 1 ? prev + 1 : prev
-      );
+      setSelectedIndex(prev => (prev + 1) % totalSelectable);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+      setSelectedIndex(prev => (prev - 1 + totalSelectable) % totalSelectable);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (selectedIndex >= 0 && filteredItems[selectedIndex]) {
+      if (selectedIndex >= 0 && selectedIndex < totalItems) {
         handleSelect(filteredItems[selectedIndex]);
-      } else if (searchTerm.trim() && !filteredItems.some(i => i[displayKey].toLowerCase() === searchTerm.toLowerCase())) {
+      } else if (selectedIndex === totalItems && hasAddNew) {
         handleAddNew();
       }
     } else if (e.key === 'Escape') {
@@ -84,8 +101,11 @@ export default function Typeahead({
   };
 
   const existingItem = items.find(
-    item => item[displayKey].toLowerCase() === searchTerm.toLowerCase()
+    item => item[displayKey]?.toLowerCase() === searchTerm.toLowerCase()
   );
+
+  const showAddNew = searchTerm.trim() && !existingItem && !loading;
+  const totalItems = filteredItems.length;
 
   return (
     <div className="typeahead-container" ref={containerRef}>
@@ -101,9 +121,10 @@ export default function Typeahead({
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        autoComplete="off"
       />
       
-      {isOpen && searchTerm && (
+      {isOpen && (searchTerm || filteredItems.length > 0) && (
         <div className="typeahead-dropdown">
           {filteredItems.map((item, idx) => (
             <div
@@ -115,14 +136,23 @@ export default function Typeahead({
             </div>
           ))}
           
-          {!existingItem && searchTerm.trim() && (
-            <div className="typeahead-add-new" onClick={handleAddNew}>
-              {loading ? 'Adding...' : `+ Add "${searchTerm}"`}
+          {showAddNew && (
+            <div 
+              className="typeahead-add-new"
+              onClick={handleAddNew}
+            >
+              + Add "{searchTerm}"
             </div>
           )}
           
           {filteredItems.length === 0 && !existingItem && searchTerm && !loading && (
-            <div className="typeahead-loading">No results found</div>
+            <div className="typeahead-loading">
+              No results found. Click to add "{searchTerm}"
+            </div>
+          )}
+          
+          {loading && (
+            <div className="typeahead-loading">Adding...</div>
           )}
         </div>
       )}

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const result = await query(`
-      SELECT si.*, c.name as customer_name 
+      SELECT si.*, c.business_name as customer_name 
       FROM sales_invoices si
       LEFT JOIN customers c ON si.customer_id = c.id
       ORDER BY si.date DESC

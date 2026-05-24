@@ -4,7 +4,9 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const result = await query(`
-      SELECT s.*, COUNT(pb.id) as bill_count 
+      SELECT s.id, s.name, s.email, s.phone, s.address, s.created_at,
+             COUNT(pb.id) as bill_count,
+             COALESCE(SUM(pb.total), 0) as total_purchased
       FROM suppliers s
       LEFT JOIN purchase_bills pb ON s.id = pb.supplier_id
       GROUP BY s.id
@@ -20,7 +22,6 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    // Only name is required, all other fields are optional
     const { name, email, phone, address } = body;
     
     if (!name || !name.trim()) {
@@ -30,7 +31,7 @@ export async function POST(request) {
     const result = await query(`
       INSERT INTO suppliers (name, email, phone, address)
       VALUES ($1, $2, $3, $4)
-      RETURNING *
+      RETURNING id, name, email, phone, address
     `, [name.trim(), email || null, phone || null, address || null]);
     
     return NextResponse.json(result.rows[0], { status: 201 });

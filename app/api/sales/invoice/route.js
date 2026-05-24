@@ -38,16 +38,30 @@ export async function POST(request) {
       
       const invoice = invoiceResult.rows[0];
       
-      for (const item of items) {
-        await client.query(`
-          INSERT INTO invoice_items (invoice_id, product_name, description, quantity, unit_price, total)
-          VALUES ($1, $2, $3, $4, $5, $6)
-        `, [invoice.id, item.product_name, item.description || null, item.quantity, item.unit_price, item.quantity * item.unit_price]);
-      }
-      
+// In the POST function, update the invoice items insert to remove description
+for (const item of items) {
+  await client.query(`
+    INSERT INTO invoice_items (invoice_id, product_name, quantity, unit_price, total)
+    VALUES ($1, $2, $3, $4, $5)
+  `, [invoice.id, item.product_name, item.quantity, item.unit_price, item.quantity * item.unit_price]);
+}
+
+
       await client.query('COMMIT');
       
-      return NextResponse.json({ success: true, invoice });
+      // Get customer name for response
+      const customerResult = await client.query(
+        'SELECT business_name FROM customers WHERE id = $1',
+        [customer_id]
+      );
+      
+      return NextResponse.json({ 
+        success: true, 
+        invoice: {
+          ...invoice,
+          customer_name: customerResult.rows[0]?.business_name
+        }
+      });
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
